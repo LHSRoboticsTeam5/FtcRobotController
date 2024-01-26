@@ -1,19 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.tfod.Recognition;
-import org.firstinspires.ftc.vision.VisionPortal;
-import org.firstinspires.ftc.vision.tfod.TfodProcessor;
-
-import java.util.List;
 
 /**
  * Instead of each Op Mode class redefining the robot's hardware resources within its implementation,
@@ -33,16 +27,14 @@ public class RobotHardware {
     private DcMotor rightFrontWheel;
     private DcMotor leftRearWheel;
     private DcMotor rightRearWheel;
-    private WebcamName webCam;
+
+    private Servo launchServo;
+
+    private DistanceSensor leftDistanceSensor;
+    private  DistanceSensor rightDistanceSensor;
+    private ColorSensor colorSensor;
 
     // Define other HardwareDevices as needed.
-    private DcMotor armMotor;
-    private Servo   leftHand;
-    private Servo   rightHand;
-    private TfodProcessor tfod;
-    private VisionPortal visionPortal;
-
-    private DistanceSensor propSensor;
 
     // Define Drive constants.  Make them public so they CAN be used by the calling OpMode
     static final double COUNTS_PER_MOTOR_REV = 560;
@@ -50,11 +42,13 @@ public class RobotHardware {
     static final double WHEEL_DIAMETER_INCHES = 4.0;     // For figuring circumference
     static final double COUNTS_PER_INCH = (COUNTS_PER_MOTOR_REV * DRIVE_GEAR_REDUCTION) /
             (WHEEL_DIAMETER_INCHES * 3.1415);
-    public static final double DEFAULT_WHEEL_MOTOR_SPEED = .4;
+    public static final double DEFAULT_WHEEL_MOTOR_SPEED = .2;
     public static final double MID_SERVO       =  0.5 ;
     public static final double HAND_SPEED      =  0.02 ;  // sets rate to move servo
     public static final double ARM_UP_POWER    =  0.45 ;
     public static final double ARM_DOWN_POWER  = -0.45 ;
+    public static final double DEFAULT_APPROACH_SPEED = -.1;
+
 
     /**
      * The one and only constructor requires a reference to an OpMode.
@@ -69,21 +63,13 @@ public class RobotHardware {
      */
     public void init() {
         initWheelMotors();
+        initSensors();
         initServos();
-        initTfod();
-        initVisionPortal();
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();
     }
 
-    /**
-     * Call shutDown() to stop and close all the robot's hardware.
-     */
-    public void shutDown() {
-        tfod.shutdown();
-        visionPortal.close();
-    }
     /**
      * Initialize all the wheel motors.
      * This method must be called ONCE when the OpMode is initialized.
@@ -92,104 +78,39 @@ public class RobotHardware {
      */
     private void initWheelMotors()    {
         // Define and Initialize Motors (note: need to use reference to actual OpMode).
-        leftFrontWheel  = myOpMode.hardwareMap.get(DcMotor.class, "LFront");
-        rightFrontWheel = myOpMode.hardwareMap.get(DcMotor.class, "RFront");
-        leftRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "LRear");
-        rightRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "RRear");
-
-        armMotor   = myOpMode.hardwareMap.get(DcMotor.class, "arm");
+        leftFrontWheel  = myOpMode.hardwareMap.get(DcMotor.class, "front_left_motor");
+        rightFrontWheel = myOpMode.hardwareMap.get(DcMotor.class, "front_right_motor");
+        leftRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "back_left_motor");
+        rightRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "back_right_motor");
 
         // To drive forward, most robots need the motors on one side to be reversed, because the axles point in opposite directions.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
-        leftFrontWheel.setDirection(DcMotor.Direction.FORWARD);
-        leftRearWheel.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontWheel.setDirection(DcMotor.Direction.REVERSE);
-        rightRearWheel.setDirection(DcMotor.Direction.REVERSE);
-
-        // If there are encoders connected, switch to RUN_USING_ENCODER mode for greater accuracy
-        leftFrontWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rightFrontWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        leftRearWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        rightRearWheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftFrontWheel.setDirection(DcMotor.Direction.REVERSE);
+        leftRearWheel.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontWheel.setDirection(DcMotor.Direction.FORWARD);
+        rightRearWheel.setDirection(DcMotor.Direction.FORWARD);
 
         // Set wheel motors to not resist turning when motor is stopped.
         leftFrontWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         rightFrontWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         leftRearWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         rightRearWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+
+        setRunModeForAllWheels(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
 
     /**
      * Initialize all servos.
      */
-    private void initServos() {
-        // Define and initialize ALL installed servos.
-        leftHand = myOpMode.hardwareMap.get(Servo.class, "left_hand");
-        rightHand = myOpMode.hardwareMap.get(Servo.class, "right_hand");
-        leftHand.setPosition(MID_SERVO);
-        rightHand.setPosition(MID_SERVO);
+    private void initSensors()
+    {
+        colorSensor = myOpMode.hardwareMap.get(ColorSensor.class, "colorSensor");
+        leftDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "leftDistanceSensor");
+        rightDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "rightDistanceSensor" );
     }
-
-    /**
-     * Initialize the TensorFlow Object Detection processor.
-     */
-    private void initTfod() {
-        // Create the TensorFlow processor by using its Builder.
-        tfod = new TfodProcessor.Builder()
-                // Call various setters on the Builder.
-                // Use setModelAssetName() if the TF Model is built in as an asset.
-                // Use setModelFileName() if you have downloaded a custom team model to the Robot Controller.
-                //.setModelAssetName(TFOD_MODEL_ASSET)
-                //.setModelFileName(TFOD_MODEL_FILE)
-                //.setModelLabels(LABELS)
-                //.setIsModelTensorFlow2(true)
-                //.setIsModelQuantized(true)
-                //.setModelInputSize(300)
-                //.setModelAspectRatio(16.0 / 9.0)
-
-                //Finally, call build() to return a TfodProcessor.
-                .build();
-
-        // Set confidence threshold for TFOD recognitions, at any time.
-        //tfod.setMinResultConfidence(0.75f);
-
-        // Disable or re-enable the TFOD processor at any time.
-        //visionPortal.setProcessorEnabled(tfod, true);
-    }
-
-    /**
-     * Initialize the VisionPortal. tfod is expected to be initialized before calling this method.
-     */
-    private void initVisionPortal() {
-        if (tfod == null) {
-            throw new RuntimeException("tfod must be initialized first");
-        }
-
-        // Create the VisionPortal by using is Builder.
-        visionPortal = new VisionPortal.Builder()
-
-                // Set the camera to the webcam hardware.
-                .setCamera(myOpMode.hardwareMap.get(WebcamName.class, "Webcam 1"))
-
-                // Choose a camera resolution. Not all cameras support all resolutions.
-                //.setCameraResolution(new Size(640, 480))
-
-                // Enable the RC preview (LiveView).  Set "false" to omit camera monitoring.
-                //.enableCameraMonitoring(true)
-
-                // Set the stream format; MJPEG uses less bandwidth than default YUY2.
-                //.setStreamFormat(VisionPortal.StreamFormat.YUY2)
-
-                // Choose whether or not LiveView stops if no processors are enabled.
-                // If set "true", monitor shows solid orange screen if no processors enabled.
-                // If set "false", monitor shows camera view without annotations.
-                //.setAutoStopLiveView(false)
-
-                // Set and enable the processor.
-                .addProcessor(tfod)
-
-                // Build the Vision Portal, using the above settings.
-                .build();
+    private void initServos(){
+        launchServo = myOpMode.hardwareMap.get(Servo.class, "launchServo");
+        launchServo.setPosition(0.7);
     }
 
     /**
@@ -200,13 +121,15 @@ public class RobotHardware {
      * @param speed
      */
     public void autoDriveRobot(int leftInches, int rightInches, double speed) {
+        setRunModeForAllWheels(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
         int leftInchesToCPI = (int) (leftInches * COUNTS_PER_INCH);
         int rightInchesToCPI = (int) (rightInches * COUNTS_PER_INCH);
 
         int leftFrontTarget = leftFrontWheel.getCurrentPosition() + leftInchesToCPI;
-        int leftRearTarget = leftFrontWheel.getCurrentPosition() + leftInchesToCPI;
-        int rightFrontTarget = leftFrontWheel.getCurrentPosition() + rightInchesToCPI;
-        int rightRearTarget = leftFrontWheel.getCurrentPosition() + rightInchesToCPI;
+        int leftRearTarget = leftRearWheel.getCurrentPosition() + leftInchesToCPI;
+        int rightFrontTarget = rightFrontWheel.getCurrentPosition() + rightInchesToCPI;
+        int rightRearTarget = rightRearWheel.getCurrentPosition() + rightInchesToCPI;
 
         leftFrontWheel.setTargetPosition(leftFrontTarget);
         leftRearWheel.setTargetPosition(leftRearTarget);
@@ -224,7 +147,7 @@ public class RobotHardware {
         Telemetry.Item rightRearWheelItem = myOpMode.telemetry.addData("RR Wheel", rightRearWheel.getCurrentPosition());
         myOpMode.telemetry.update();
 
-        setPowerAllWheels(speed);
+        setPowerAllWheels(Math.abs(speed));
 
         // Update telemetry for as long as the wheel motors isBusy().
         while (leftFrontWheel.isBusy() && leftRearWheel.isBusy() && rightFrontWheel.isBusy() && rightRearWheel.isBusy()) {
@@ -249,11 +172,6 @@ public class RobotHardware {
         autoDriveRobot(leftInches, rightInches, DEFAULT_WHEEL_MOTOR_SPEED);
     }
 
-    public double getPropDistanceInCM() {
-        double distance = propSensor.getDistance(DistanceUnit.CM);
-        return distance;
-    }
-
     /**
      * Set the RunMode for all wheel motors to the passed runMode.
      * @param runMode
@@ -270,11 +188,10 @@ public class RobotHardware {
      * @param speed
      */
     public void setPowerAllWheels(double speed) {
-        double absoluteSpeed = Math.abs(speed);
-        leftFrontWheel.setPower(absoluteSpeed);
-        leftRearWheel.setPower(absoluteSpeed);
-        rightFrontWheel.setPower(absoluteSpeed);
-        rightRearWheel.setPower(absoluteSpeed);
+        leftFrontWheel.setPower(speed);
+        leftRearWheel.setPower(speed);
+        rightFrontWheel.setPower(speed);
+        rightRearWheel.setPower(speed);
     }
 
     /**
@@ -291,6 +208,7 @@ public class RobotHardware {
         final double leftFrontVelocity = vectorLength * Math.sin(robotAngle) - rightXscale;
         final double rightRearVelocity = vectorLength * Math.sin(robotAngle) + rightXscale;
         final double leftRearVelocity = vectorLength * Math.cos(robotAngle) - rightXscale;
+        setRunModeForAllWheels(DcMotor.RunMode.RUN_USING_ENCODER);
         // Use existing method to drive both wheels.
         setDrivePower(leftFrontVelocity, rightFrontVelocity, leftRearVelocity, rightRearVelocity);
     }
@@ -307,39 +225,94 @@ public class RobotHardware {
     }
 
     /**
-     * Pass the requested arm power to the appropriate hardware drive motor
-     *
-     * @param power driving power (-1.0 to 1.0)
-     */
-    public void setArmPower(double power) {
-        armMotor.setPower(power);
-    }
-
-    /**
-     * Send the two hand-servos to opposing (mirrored) positions, based on the passed offset.
-     *
-     * @param offset
-     */
-    public void setHandPositions(double offset) {
-        offset = Range.clip(offset, -0.5, 0.5);
-        leftHand.setPosition(MID_SERVO + offset);
-        rightHand.setPosition(MID_SERVO - offset);
-    }
-
-    /**
-     * Gets a list containing recognitions that were detected since the last call to this method, or null if no new recognitions are available.
-     * @return
-     */
-    public List<Recognition> getFreshTfodRecognitions() {
-        return tfod.getFreshRecognitions();
-    }
-
-
-    /**
      * Move XYZ servo so that drone is released.
      */
     public void releaseDrone() {
-        //Move whichever servo(?).
+        launchServo.setPosition(0.1);
+    }
+
+    /**
+     * Return distance detected by Left Sensor in CM.
+     * @return distance in CM
+     */
+    public double getLeftSensorDistanceInCM() {
+        return leftDistanceSensor.getDistance(DistanceUnit.CM);
+    }
+
+    /**
+     * Return distance detected by Left Sensor in CM.
+     * @return distance in CM
+     */
+    public double getRightSensorDistanceInCM() {
+        return rightDistanceSensor.getDistance(DistanceUnit.CM);
+    }
+public void driveToSpike(SpikeColor color, int colorThreshold, double approachSpeed){
+        RGBAcolors colors;
+        setRunModeForAllWheels(DcMotor.RunMode.RUN_USING_ENCODER);
+        setPowerAllWheels(approachSpeed);
+
+        while (myOpMode.opModeIsActive()){
+            colors = getSensorColors();
+            if(color == SpikeColor.RED && colors.getRed()>colorThreshold){
+                break;
+            }
+            else if (colors.getBlue()>colorThreshold){
+                break;
+            }
+        }
+        autoDriveRobot(-3,-3);
+        setPowerAllWheels(0);
+}
+
+    public void driveToSpike(SpikeColor color, int colorThreshold) {
+        driveToSpike(color, colorThreshold, DEFAULT_APPROACH_SPEED);
+    }
+    /**
+     * Return all color values from Color Sensor.
+     * @return RGBAcolor
+     */
+
+    public RGBAcolors getSensorColors() {
+        int red = colorSensor.red();
+        int green = colorSensor.green();
+        int blue = colorSensor.blue();
+        int alpha = colorSensor.alpha();
+
+        myOpMode.telemetry.addData("Red: ", red);
+        myOpMode.telemetry.addData("Blue: ", blue);
+        myOpMode.telemetry.update();
+        return new RGBAcolors(red, green, blue, alpha);
+
+    }
+    /**
+     * Determine which position (1, 2, or 3) the sensor detects an object (such as a cube) is in.
+     * In this example, if neither the left or right sensors detect an object,
+     * the position is 2. If the left sensor detects an object, the position is 1. Lastly,
+     * if the right sensor detects an object, the position is 3.
+     *
+     * @return int positionNumber
+     */
+    public int getSpikeObjectPosition() {
+        double leftSensorDistance = getLeftSensorDistanceInCM();
+        double rightSensorDistance = getRightSensorDistanceInCM();
+        double maxSensorDistance = 20;
+        int positionNumber = 0;
+
+        if (leftSensorDistance > maxSensorDistance && rightSensorDistance > maxSensorDistance) {
+            myOpMode.telemetry.addData("NOT DETECTED", "Object not detected by any sensor!");
+            positionNumber = 2;
+        }
+        else if (leftSensorDistance <= maxSensorDistance) {
+            myOpMode.telemetry.addData("DETECTED LEFT SIDE", "Object distance is %.0f CM", leftSensorDistance);
+            positionNumber = 1;
+        }
+        else {
+            myOpMode.telemetry.addData("DETECTED RIGHT SIDE", "Object distance is %.0f CM", rightSensorDistance);
+            positionNumber = 3;
+        }
+        myOpMode.telemetry.update();
+
+        return positionNumber;
     }
 }
 
