@@ -49,7 +49,8 @@ public class AutoRedFar extends LinearOpMode {
         }
     }
 
-}   // end class
+}   // end class written by Luciano A. Martinez and Payson Richardson
+
 
 
 

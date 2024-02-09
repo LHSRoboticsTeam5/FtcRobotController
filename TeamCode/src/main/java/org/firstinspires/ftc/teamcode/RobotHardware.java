@@ -27,9 +27,10 @@ public class RobotHardware {
     private DcMotor rightFrontWheel;
     private DcMotor leftRearWheel;
     private DcMotor rightRearWheel;
-
+    private DcMotor rightArm;
+    private DcMotor leftArm;
     private Servo launchServo;
-
+    private Servo claw;
     private DistanceSensor leftDistanceSensor;
     private  DistanceSensor rightDistanceSensor;
     private ColorSensor colorSensor;
@@ -65,6 +66,7 @@ public class RobotHardware {
         initWheelMotors();
         initSensors();
         initServos();
+        initArmMotors();
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();
@@ -98,6 +100,12 @@ public class RobotHardware {
 
         setRunModeForAllWheels(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
+    private void initArmMotors()    {
+        leftArm  = myOpMode.hardwareMap.get(DcMotor.class, "arm");
+        rightArm = myOpMode.hardwareMap.get(DcMotor.class, "arm2");
+        leftArm.setDirection(DcMotor.Direction.REVERSE);
+        rightArm.setDirection(DcMotor.Direction.REVERSE);
+    }
 
     /**
      * Initialize all servos.
@@ -110,7 +118,8 @@ public class RobotHardware {
     }
     private void initServos(){
         launchServo = myOpMode.hardwareMap.get(Servo.class, "launchServo");
-        launchServo.setPosition(0.7);
+        launchServo.setPosition(0.9);
+        claw = myOpMode.hardwareMap.get(Servo.class, "clawServo");
     }
 
     /**
@@ -229,6 +238,31 @@ public class RobotHardware {
      */
     public void releaseDrone() {
         launchServo.setPosition(0.1);
+    }
+    public void resetDrone(){
+        launchServo.setPosition(0.9);
+    }
+    public void RaiseArm() {
+        rightArm.setPower(1);
+        leftArm.setPower(1);
+    }
+
+    public void LowerArm() {
+        rightArm.setPower(-1);
+        leftArm.setPower(-1);
+    }
+    public void StopArm() {
+        rightArm.setPower(0);
+        leftArm.setPower(0);
+    }
+
+    public void openclaw()
+    {
+        claw.setPosition(0);
+    }
+    public void closeclaw()
+    {
+        claw.setPosition(1);
     }
 
     /**

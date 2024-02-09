@@ -10,6 +10,7 @@ public class Teleop  extends LinearOpMode {
     public void runOpMode() {
         RobotHardware robot = new RobotHardware(this);
         robot.init();
+     //   robot.resetDrone();
 
         // Wait for the DS start button to be touched.
         telemetry.addData(">", "Touch Play to start OpMode");
@@ -22,6 +23,32 @@ public class Teleop  extends LinearOpMode {
             if (gamepad1.x) {
                 robot.releaseDrone();
             }
+
+            if (gamepad1.b)
+            {
+                robot.openclaw();
+            }
+
+            if (gamepad1.a)
+            {
+                robot.closeclaw();
+            }
+
+            if (gamepad1.left_bumper)
+            {
+                robot.LowerArm();
+            }
+
+            if (gamepad1.right_bumper)
+            {
+                robot.RaiseArm();
+            }
+
+            if (!gamepad1.left_bumper && !gamepad1.right_bumper)
+            {
+                robot.StopArm();
+            }
+           //       robot.resetDrone();
         }
     }
 }
