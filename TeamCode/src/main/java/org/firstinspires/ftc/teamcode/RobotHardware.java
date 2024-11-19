@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -27,10 +28,9 @@ public class RobotHardware {
     private DcMotor rightFrontWheel;
     private DcMotor leftRearWheel;
     private DcMotor rightRearWheel;
-    private DcMotor rightArm;
-    private DcMotor leftArm;
+    private DcMotor Arm;
+    private DcMotor Arm2;
     private Servo launchServo;
-    private Servo claw;
     private DistanceSensor leftDistanceSensor;
     private  DistanceSensor rightDistanceSensor;
     private ColorSensor colorSensor;
@@ -64,9 +64,8 @@ public class RobotHardware {
      */
     public void init() {
         initWheelMotors();
-        initSensors();
-        initServos();
-        initArmMotors();
+        //initSensors();
+        //initArmMotors();
 
         myOpMode.telemetry.addData(">", "Hardware Initialized");
         myOpMode.telemetry.update();
@@ -80,17 +79,29 @@ public class RobotHardware {
      */
     private void initWheelMotors()    {
         // Define and Initialize Motors (note: need to use reference to actual OpMode).
-        leftFrontWheel  = myOpMode.hardwareMap.get(DcMotor.class, "front_left_motor");
-        rightFrontWheel = myOpMode.hardwareMap.get(DcMotor.class, "front_right_motor");
-        leftRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "back_left_motor");
-        rightRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "back_right_motor");
+        leftFrontWheel  = myOpMode.hardwareMap.get(DcMotor.class, "LeftFront");
+        rightFrontWheel = myOpMode.hardwareMap.get(DcMotor.class, "RightFront");
+        leftRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "LeftRear");
+        rightRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "RightRear");
+        Arm = myOpMode.hardwareMap.get(DcMotor.class, "Arm");
+        Arm2 = myOpMode.hardwareMap.get(DcMotor.class, "Arm2");
+
+        launchServo = myOpMode.hardwareMap.get(Servo.class, "launchServo");
+        //arm = myOpMode.hardwareMap.get(DcMotor.class, "Arm");
 
         // To drive forward, most robots need the motors on one side to be reversed, because the axles point in opposite directions.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
         leftFrontWheel.setDirection(DcMotor.Direction.REVERSE);
-        leftRearWheel.setDirection(DcMotor.Direction.REVERSE);
-        rightFrontWheel.setDirection(DcMotor.Direction.FORWARD);
+        leftRearWheel.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontWheel.setDirection(DcMotor.Direction.REVERSE);
         rightRearWheel.setDirection(DcMotor.Direction.FORWARD);
+
+        Arm.setDirection(DcMotor.Direction.FORWARD);
+        Arm2.setDirection(DcMotor.Direction.FORWARD);
+        Arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        Arm2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        Arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        Arm2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // Set wheel motors to not resist turning when motor is stopped.
         leftFrontWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -101,10 +112,8 @@ public class RobotHardware {
         setRunModeForAllWheels(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
     private void initArmMotors()    {
-        leftArm  = myOpMode.hardwareMap.get(DcMotor.class, "arm");
-        rightArm = myOpMode.hardwareMap.get(DcMotor.class, "arm2");
-        leftArm.setDirection(DcMotor.Direction.REVERSE);
-        rightArm.setDirection(DcMotor.Direction.REVERSE);
+       // arm  = myOpMode.hardwareMap.get(DcMotor.class, "arm");
+     //   arm.setDirection(DcMotor.Direction.REVERSE);
     }
 
     /**
@@ -116,11 +125,7 @@ public class RobotHardware {
         leftDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "leftDistanceSensor");
         rightDistanceSensor = myOpMode.hardwareMap.get(DistanceSensor.class, "rightDistanceSensor" );
     }
-    private void initServos(){
-        launchServo = myOpMode.hardwareMap.get(Servo.class, "launchServo");
-        launchServo.setPosition(0.9);
-        claw = myOpMode.hardwareMap.get(Servo.class, "clawServo");
-    }
+
 
     /**
      * Drive robot to the targeted position designated by the passed leftInches and
@@ -178,7 +183,12 @@ public class RobotHardware {
      * @param rightInches
      */
     public void autoDriveRobot(int leftInches, int rightInches) {
-        autoDriveRobot(leftInches, rightInches, DEFAULT_WHEEL_MOTOR_SPEED);
+        autoDriveRobot(
+
+
+
+
+                leftInches, rightInches, DEFAULT_WHEEL_MOTOR_SPEED);
     }
 
     /**
@@ -236,33 +246,33 @@ public class RobotHardware {
     /**
      * Move XYZ servo so that drone is released.
      */
-    public void releaseDrone() {
-        launchServo.setPosition(0.1);
-    }
-    public void resetDrone(){
-        launchServo.setPosition(0.9);
-    }
+
     public void RaiseArm() {
-        rightArm.setPower(1);
-        leftArm.setPower(1);
+        Arm.setPower(0.5);
+
     }
 
     public void LowerArm() {
-        rightArm.setPower(-1);
-        leftArm.setPower(-1);
+        Arm.setPower(-0.5);
     }
-    public void StopArm() {
-        rightArm.setPower(0);
-        leftArm.setPower(0);
+    public void MoveSecondArm() {
+        Arm2.setPower(1);
+    }
+    public void StopSecondArm() {
+        Arm2.setPower(0);
     }
 
-    public void openclaw()
-    {
-        claw.setPosition(0);
+    public void ReverseArm() {
+        Arm2.setPower(-1);
+
     }
-    public void closeclaw()
+    public void openlaunchServo()
     {
-        claw.setPosition(1);
+        launchServo.setPosition(0.5);
+    }
+    public void closelaunchServo()
+    {
+        launchServo.setPosition(0);
     }
 
     /**
