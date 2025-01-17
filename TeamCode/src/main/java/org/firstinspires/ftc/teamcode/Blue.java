@@ -24,11 +24,24 @@ public class Blue extends LinearOpMode {
             // This is how the robot moves
             robot.autoDriveRobot(-30,-30);//forward
             robot.autoDriveRobot(-25,25);//turn right
-            robot.autoDriveRobot(50,50);//forward
-
+            robot.autoDriveRobot(10,10);//forward
+            robot.LowerArm();
+            sleep (500);
+            robot.stopArm();
+            robot.moveCog();
+            sleep(5000);
+            robot.stopCog();
+            robot.RaiseArm();
             robot.autoDriveRobot(-25,25);//turn right
-            robot.autoDriveRobot(-30,-30);//back
-
+            robot.autoDriveRobot(20,20);//back
+            robot.LowerArm();
+            robot.reverseCog();
+            sleep(5000);
+            robot.stopCog();
+            robot.RaiseArm();
+            robot.autoDriveRobot(40,40);//forward
+            robot.autoDriveRobot(-25,25);//turn right
+            robot.autoDriveRobot(40,40);//forward
             while (opModeIsActive()) {
                 robot.openlaunchServo();
             }

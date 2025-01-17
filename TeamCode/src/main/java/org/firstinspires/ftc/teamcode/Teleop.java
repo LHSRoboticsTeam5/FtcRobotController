@@ -10,13 +10,8 @@ public class Teleop  extends LinearOpMode {
     public void runOpMode() {
         RobotHardware robot = new RobotHardware(this);
         robot.init();
-     //   robot.resetDrone();
 
         // Wait for the DS start button to be touched.
-
-
-
-
         telemetry.addData(">", "Touch Play to start OpMode");
         telemetry.update();
         waitForStart();
@@ -27,41 +22,57 @@ public class Teleop  extends LinearOpMode {
             if (gamepad1.a) {
                 robot.LowerArm();
             }
-
-            if (gamepad1.b) {
+            else if (gamepad1.b) {
                 robot.RaiseArm();
+            }
+            else {
+                robot.stopArm();
             }
 
             if (gamepad1.left_bumper)
             {
-robot.MoveSecondArm();            }
+                robot.moveCog();
+            }
 
             if (gamepad1.right_bumper)
             {
-robot.StopSecondArm();
+                robot.stopCog();
             }
-if (gamepad1.dpad_up){
-   robot.ReverseArm();
-}
+
+            if (gamepad1.dpad_left)   {
+                robot.openGrabber();
+            }
+            if (gamepad2.left_bumper){
+                robot.lowerVerticalSlide();
+            }
+
+            if (gamepad2.right_bumper){
+                robot.liftVerticalSlide();
+            }
+
+            if(gamepad2.x){
+                robot.stopVerticalSlide();
+            }
+
+            if (gamepad1.dpad_right){
+                robot.closeGrabber();
+            }
+
+            if (gamepad1.dpad_up){
+                robot.reverseCog();
+            }
 
             while (gamepad1.x) {
-
                 robot.closelaunchServo();
                 telemetry.addData("servo", "moving");
                 telemetry.update();
             }
 
             while (gamepad1.y) {
-
                 robot.openlaunchServo();
                 telemetry.addData("servo", "moving");
                 telemetry.update();
             }
-           // if (!gamepad1.left_bumper && !gamepad1.right_bumper)
-           // {
-             //   robot.StopArm();
-            //}
-           //       robot.resetDrone();
         }
     }
 }

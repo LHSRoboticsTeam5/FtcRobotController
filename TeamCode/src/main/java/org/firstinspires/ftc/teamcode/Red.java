@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 public class Red extends LinearOpMode {
 
     private RobotHardware robot;
+
     @Override
     public void runOpMode() {
         robot = new RobotHardware(this);
@@ -23,21 +24,30 @@ public class Red extends LinearOpMode {
 
             // Set these variables to a initial distance, you will need to change this number
             // This is how the robot moves
-            robot.autoDriveRobot(-30,-30);//forward
-            robot.autoDriveRobot(-25,25);//turn right
-            robot.autoDriveRobot(50,50);//forward
-
-            robot.autoDriveRobot(-25,25);//turn right
-            robot.autoDriveRobot(-30,-30);//back
-            robot.openlaunchServo();
-            robot.closelaunchServo();
-
-
-
+            robot.autoDriveRobot(-30, -30);//forward
+            robot.autoDriveRobot(25, -25);//turn right
+            robot.autoDriveRobot(10, 10);//forward
+            robot.LowerArm();
+            robot.moveCog();
+            sleep(1000);
+            robot.stopCog();
+            robot.RaiseArm();
+            robot.autoDriveRobot(25, -25);//turn right
+            robot.autoDriveRobot(20, 20);//back
+            robot.LowerArm();
+            robot.reverseCog();
+            sleep(1000);
+            robot.stopCog();
+            robot.RaiseArm();
+            robot.autoDriveRobot(25, -25);//turn right
+            robot.autoDriveRobot(30, 30);//forward
+            robot.autoDriveRobot(25, -25);//turn right
+            robot.autoDriveRobot(40, 40);//forward
+            while (opModeIsActive()) {
+                robot.openlaunchServo();
+            }
         }
     }
-
 }
-
 // end class
 

@@ -30,7 +30,9 @@ public class RobotHardware {
     private DcMotor rightRearWheel;
     private DcMotor Arm;
     private DcMotor Arm2;
+    private DcMotor verticalSlide;
     private Servo launchServo;
+    private Servo grabber;
     private DistanceSensor leftDistanceSensor;
     private  DistanceSensor rightDistanceSensor;
     private ColorSensor colorSensor;
@@ -85,8 +87,10 @@ public class RobotHardware {
         rightRearWheel = myOpMode.hardwareMap.get(DcMotor.class, "RightRear");
         Arm = myOpMode.hardwareMap.get(DcMotor.class, "Arm");
         Arm2 = myOpMode.hardwareMap.get(DcMotor.class, "Arm2");
+        verticalSlide = myOpMode.hardwareMap.get(DcMotor.class,"verticalSlide");
 
         launchServo = myOpMode.hardwareMap.get(Servo.class, "launchServo");
+        grabber = myOpMode.hardwareMap.get(Servo.class, "grabber");
         //arm = myOpMode.hardwareMap.get(DcMotor.class, "Arm");
 
         // To drive forward, most robots need the motors on one side to be reversed, because the axles point in opposite directions.
@@ -102,6 +106,8 @@ public class RobotHardware {
         Arm2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         Arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         Arm2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        verticalSlide.setDirection(DcMotorSimple.Direction.FORWARD);
+        verticalSlide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Set wheel motors to not resist turning when motor is stopped.
         leftFrontWheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -248,21 +254,37 @@ public class RobotHardware {
      */
 
     public void RaiseArm() {
-        Arm.setPower(0.5);
+        Arm.setPower(0.2);
 
     }
 
     public void LowerArm() {
-        Arm.setPower(-0.5);
+        Arm.setPower(-0.2);
     }
-    public void MoveSecondArm() {
+
+    public void stopArm() {
+        Arm.setPower(0);
+    }
+
+    public void moveCog() {
         Arm2.setPower(1);
     }
-    public void StopSecondArm() {
+
+    public void liftVerticalSlide (){
+        verticalSlide.setPower(1);
+    }
+
+    public void lowerVerticalSlide (){
+        verticalSlide.setPower(-1);
+    }
+    public void stopVerticalSlide(){
+        verticalSlide.setPower(0);
+    }
+    public void stopCog() {
         Arm2.setPower(0);
     }
 
-    public void ReverseArm() {
+    public void reverseCog() {
         Arm2.setPower(-1);
 
     }
@@ -273,6 +295,14 @@ public class RobotHardware {
     public void closelaunchServo()
     {
         launchServo.setPosition(0);
+    }
+
+    public void openGrabber() {
+        grabber.setPosition(1);
+    }
+
+    public void closeGrabber(){
+        grabber.setPosition(0);
     }
 
     /**
